@@ -9,11 +9,13 @@ def import_image(filename):
 
 
 def convert_image_to_rgb(img):
-    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    clone = img.copy()
+    return cv2.cvtColor(clone, cv2.COLOR_BGR2RGB)
 
 
 def blur_image(img, kernel_size):
-    return cv2.blur(img, kernel_size)
+    clone = img.copy()
+    return cv2.blur(clone, kernel_size)
 
 
 def convert_image_to_gray(img):
@@ -37,21 +39,25 @@ def draw_contours_on_img(img, contours, color=(255, 0, 0), thickness=2, contour_
 
 
 def convert_image_to_black_and_white(img, threshold, maximum_bgr, threshold_type=cv2.THRESH_BINARY_INV):
-    _, thresh = cv2.threshold(img, threshold, maximum_bgr, threshold_type)
+    clone = img.copy()
+    _, thresh = cv2.threshold(clone, threshold, maximum_bgr, threshold_type)
 
     return thresh
 
 
 def dilate_img(img, kernel, iterations=1):
-    return cv2.dilate(img, kernel, iterations=iterations)
+    clone = img.copy()
+    return cv2.dilate(clone, kernel, iterations=iterations)
 
 
 def erode_img(img, kernel, iterations=1):
-    return cv2.erode(img, kernel, iterations=iterations)
+    clone = img.copy()
+    return cv2.erode(clone, kernel, iterations=iterations)
 
 
 def apply_morphology_on_img(img, kernel, morphology):
-    return cv2.morphologyEx(img, morphology, kernel)
+    clone = img.copy()
+    return cv2.morphologyEx(clone, morphology, kernel)
 
 
 def prepare_plot_size(images):
@@ -79,28 +85,26 @@ def main():
     img = import_image("FEI01.jpg")
     img = convert_image_to_rgb(img)
 
-    kernel_size = 7
+    kernel_size = 6
     kernel_mtx = (kernel_size, kernel_size)
 
     img_blur = blur_image(img, kernel_mtx)
     img_gray = convert_image_to_gray(img_blur)
 
     max_bgr = img_gray.max()
-    threshold = max_bgr/2
+    threshold = max_bgr/2*1.55
     print(f"Largest BGR value: {max_bgr}")
     print(f"Threshold: {threshold}")
 
-    img_bw = convert_image_to_black_and_white(img_gray, img_gray.max(), threshold, max_bgr)
+    img_bw = convert_image_to_black_and_white(img_gray, threshold, max_bgr)
 
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
 
-    img_dilate = dilate_img(img_bw, kernel, 1)
+    img_dilate = dilate_img(img_bw, kernel)
     img_close = apply_morphology_on_img(img_dilate, kernel, cv2.MORPH_CLOSE)
 
-    edges_on_gray_img = canny_edges(img_gray, threshold, threshold)
-    edges_on_bw_img = canny_edges(img_bw, threshold, threshold)
     edges_on_last_morphology = canny_edges(img_close, threshold, threshold)
-    contours = find_contours(edges_on_gray_img)
+    contours = find_contours(edges_on_last_morphology)
     img_with_contours = draw_contours_on_img(img, contours)
     rgb_img_with_contours = convert_image_to_rgb(img_with_contours)
     
@@ -109,10 +113,8 @@ def main():
         img_blur,
         img_gray,
         img_bw,
-        # img_open,
+        img_dilate,
         img_close,
-        edges_on_gray_img,
-        edges_on_bw_img,
         edges_on_last_morphology,
         img_with_contours
     ]
